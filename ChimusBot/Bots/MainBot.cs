@@ -8,6 +8,8 @@ namespace ChimusBot.Bots;
 
 public partial class MainBot : IDisposable
 {
+    public static MainBot? Instance { get; private set; }
+    
     private readonly DiscordSocketClient _client;
     private readonly BotConfig _botConfig;
     
@@ -23,6 +25,8 @@ public partial class MainBot : IDisposable
         });
 
         _botConfig = botConfig;
+
+        Instance = this;
     }
 
     ~MainBot()
@@ -39,6 +43,8 @@ public partial class MainBot : IDisposable
     protected virtual void Dispose(bool disposing)
     {
         _client.Dispose();
+
+        Instance = null;
     }
     
     public async Task RunAsync()
@@ -55,8 +61,6 @@ public partial class MainBot : IDisposable
         
         await _client.LoginAsync(TokenType.Bot, _botConfig.DiscordToken);
         await _client.StartAsync();
-
-        var removingScheduleIds = new List<int>();
         
         while (IsRunning)
         {
@@ -100,6 +104,42 @@ public partial class MainBot : IDisposable
                     }
                 }
             }
+            
+            var matchedSchedules = DbHelper.GetSchedules().Where(schedule =>
+            {
+                var dateTime = schedule.DateTime;
+                return dateTime.Date == now.Date && dateTime.Hour == now.Hour && dateTime.Minute == now.Minute;
+            }).ToArray();
+            
+            foreach (var schedule in matchedSchedules)
+            {
+                Log.Info($"스케쥴: ID: {schedule.Id}, 채널 - {schedule.TargetChannel}, 메시지: {schedule.Message}");
+                
+                var guildAndChannel = schedule.TargetChannel;
+                var colonPosition = guildAndChannel.IndexOf(':');
+                var guildId = ulong.Parse(guildAndChannel[..colonPosition]);
+                var channelId = ulong.Parse(guildAndChannel[(colonPosition + 1)..]);
+
+                var guild = _client.Guilds.FirstOrDefault(guild => guild.Id == guildId);
+                if (guild == null)
+                {
+                    Log.Error($"길드를 못 찾았음: {guildId}");
+                    continue;
+                }
+
+                var channel = guild.TextChannels.First(channel => channel.Id == channelId);
+                if (channel == null)
+                {
+                    Log.Error($"채널을 못 찾았음: {channelId} from {guildId}");
+                    continue;
+                }
+
+                await channel.SendMessageAsync(schedule.Message);
+            }
+            
+            foreach (var schedule in matchedSchedules)
+                DbHelper.RemoveSchedule(schedule.Id);
+            DbHelper.Flush();
 
             var nowTime = DateTime.Now.TimeOfDay;
             Thread.Sleep((60 - nowTime.Seconds + 1) * 1000);

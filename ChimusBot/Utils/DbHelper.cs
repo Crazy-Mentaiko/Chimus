@@ -8,12 +8,14 @@ public static class DbHelper
 {
     private static readonly LiteDatabase _db;
 
-    private static readonly ILiteCollection<Birthday> _birthdays; 
+    private static readonly ILiteCollection<Birthday> _birthdays;
+    private static readonly ILiteCollection<Schedule> _schedules;
 
     static DbHelper()
     {
         _db = new LiteDatabase("data.db");
         _birthdays = _db.GetCollection<Birthday>();
+        _schedules = _db.GetCollection<Schedule>();
     }
 
     public static void Flush()
@@ -34,4 +36,17 @@ public static class DbHelper
         var monthDay = $"{month:00}-{day:00}";
         return _birthdays.Query().Where(birthday => birthday.MonthDay == monthDay).ToEnumerable();
     }
+
+    public static void AddSchedule(string message, string targetChannel, DateTime dateTime)
+    {
+        Log.Info($"메시지: {message}, 채널: {targetChannel}, 일시: {dateTime}");
+        _schedules.Insert(new Schedule(message, targetChannel, dateTime));
+    }
+
+    public static void RemoveSchedule(int id)
+    {
+        _schedules.Delete(id);
+    }
+
+    public static IEnumerable<Schedule> GetSchedules() => _schedules.Query().ToArray();
 }
