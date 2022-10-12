@@ -2,6 +2,13 @@
 using ChimusBot.ConfigModel;
 using ChimusBot.Utils;
 
+Log.Info(" _____  _   _ ________  ____   _ _____ ");
+Log.Info("/  __ \\| | | |_   _|  \\/  | | | /  ___|");
+Log.Info("| /  \\/| |_| | | | | .  . | | | \\ `--. ");
+Log.Info("| |    |  _  | | | | |\\/| | | | |`--. \\");
+Log.Info("| \\__/\\| | | |_| |_| |  | | |_| /\\__/ /");
+Log.Info(" \\____/\\_| |_/\\___/\\_|  |_/\\___/\\____/ ");
+
 var botConfig = BotConfig.Load();
 if (botConfig == null)
 {

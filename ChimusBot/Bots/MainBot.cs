@@ -3,6 +3,7 @@ using ChimusBot.Utils;
 using Discord;
 using Discord.Interactions.Builders;
 using Discord.WebSocket;
+using SlashCommandBuilder = Discord.SlashCommandBuilder;
 
 namespace ChimusBot.Bots;
 
@@ -215,7 +216,24 @@ public partial class MainBot : IDisposable
     private async Task ReactionSlashCommandAsync(SocketSlashCommand command)
     {
         Log.Info($"명령 시도: {command.Data.Name}");
-        await _commands.FirstOrDefault(kv => kv.Key.Name == command.CommandName).Value.Invoke(command);
+        var builder = _commands.Keys.FirstOrDefault(builder => builder.Name == command.CommandName);
+        if (builder == null)
+        {
+            Log.Error("명령어가 등록되어 있지 않음");
+            await command.RespondAsync("명령어 설정이 좀 잘못된 거 같은데...");
+            return;
+        }
+        
+        var foundCommand = _commands[builder];
+        try
+        {
+            await foundCommand.Invoke(command);
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Error raised: {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
+            //await command.RespondAsync("명령어 사용 중에 오류 발생.");
+        }
     }
 
     #endregion

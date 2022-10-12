@@ -149,16 +149,8 @@ partial class MainBot
         }
         
         var message = command.Data.Options.First(option => option.Name == "메시지").Value as string ?? string.Empty;
-        var channel = command.Data.Options.First(option => option.Name == "채널").Value as string ?? string.Empty;
+        var channel = command.Data.Options.First(option => option.Name == "채널").Value as SocketTextChannel ?? command.Channel;
         var dateTime = command.Data.Options.First(option => option.Name == "일시").Value as string ?? string.Empty;
-        
-        var channelIdMatch = Regex.Match(channel, "<#([0-9]+)>");
-        var channelId = channelIdMatch.Success ? ulong.Parse(channelIdMatch.Groups[1].Value) : 0;
-        if (!channelIdMatch.Success)
-        {
-            var textChannel = guild.TextChannels.First(ch => ch.Name == channel);
-            channelId = textChannel.Id;
-        }
         
         if (string.IsNullOrEmpty(dateTime) || !DateTime.TryParse(dateTime, out var scheduleDateTime))
         {
@@ -166,7 +158,7 @@ partial class MainBot
             return;
         }
             
-        DbHelper.AddSchedule(message, $"{guild.Id}:{channelId}", scheduleDateTime);
+        DbHelper.AddSchedule(message, $"{guild.Id}:{channel.Id}", scheduleDateTime);
         DbHelper.Flush();
 
         await command.RespondAsync("일정 등록했음. 🙆");
