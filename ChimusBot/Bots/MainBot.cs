@@ -98,7 +98,7 @@ public partial class MainBot : IDisposable
                             continue;
                         }
 
-                        await textChannel.SendMessageAsync($"🙌오늘은 <@${birthday.Target}>의 생일!👏");
+                        await textChannel.SendMessageAsync($"🙌오늘은 <@{birthday.Target}>의 생일!👏");
                         var chimusEmoji = guild.Emotes.FirstOrDefault(emote => emote.Name == "china_reimus");
                         if (chimusEmoji != null)
                             await textChannel.SendMessageAsync($"<:china_reimus:{chimusEmoji.Id}>");
