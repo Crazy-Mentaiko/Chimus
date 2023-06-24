@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="daram.in" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="daram.in">
+        <serverdata>
+          <mappings>
+            <mapping local="C:/Program Files/dotnet/sdk/6.0.400/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_6_default.editorconfig" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot.sln" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/.dockerignore" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/Bots/MainBot.Command.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/Bots/MainBot.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/ChimusBot.csproj" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/ConfigModel/Birthday.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/ConfigModel/BotConfig.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/Dockerfile" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/NLog.config" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/Program.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/Utils/DbHelper.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/Utils/Log.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/obj/Debug/net6.0/ChimusBot.AssemblyInfo.cs" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/obj/Debug/net6.0/ChimusBot.GeneratedMSBuildEditorConfig.editorconfig" web="/" />
+            <mapping local="$PROJECT_DIR$/ChimusBot/obj/Debug/net6.0/ChimusBot.GlobalUsings.g.cs" web="/" />
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

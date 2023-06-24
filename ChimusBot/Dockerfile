@@ -1,18 +1,10 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build-env
 WORKDIR /app
-
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
-WORKDIR /src
-COPY ["ChimusBot/ChimusBot.csproj", "ChimusBot/"]
-RUN dotnet restore "ChimusBot/ChimusBot.csproj"
 COPY . .
-WORKDIR "/src/ChimusBot"
-RUN dotnet build "ChimusBot.csproj" -c Release -o /app/build
+RUN dotnet restore
+RUN dotnet publish -c Release -o output
 
-FROM build AS publish
-RUN dotnet publish "ChimusBot.csproj" -c Release -o /app/publish
-
-FROM base AS final
+FROM mcr.microsoft.com/dotnet/runtime:7.0
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build-env /app/output .
 ENTRYPOINT ["dotnet", "ChimusBot.dll"]

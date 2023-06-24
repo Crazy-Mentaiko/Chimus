@@ -9,12 +9,8 @@ Log.Info("| |    |  _  | | | | |\\/| | | | |`--. \\");
 Log.Info("| \\__/\\| | | |_| |_| |  | | |_| /\\__/ /");
 Log.Info(" \\____/\\_| |_/\\___/\\_|  |_/\\___/\\____/ ");
 
-var botConfig = BotConfig.Load();
-if (botConfig == null)
-{
-    Log.Error("짭무 설정 파일이 존재하지 않습니다.");
-    return 1;
-}
+var botConfig = BotConfig.LoadFromFile() ?? BotConfig.LoadFromEnvironment();
+DbHelper.Initialize(botConfig);
 
 var chimusBot = new MainBot(botConfig);
 

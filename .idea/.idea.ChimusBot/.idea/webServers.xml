@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="d22f7331-fe0f-4e03-8857-aed6a3f4a793" name="daram.in" url="http://daram.in">
+        <fileTransfer rootFolder="/Users/daramkun/Bots/chimus" accessType="SFTP" host="192.168.0.5" port="22" sshConfigId="b167c648-18b6-42aa-81cd-ded67faad0b5" sshConfig="daramkun@192.168.0.5:22 agent" authAgent="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
