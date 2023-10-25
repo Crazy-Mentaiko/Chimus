@@ -75,14 +75,6 @@ public partial class MainBot
             ImageHome
         },
         {
-            new SlashCommandBuilder().WithName("쪼옥").WithDescription("랜덤 이미지"),
-            ImageSunkist
-        },
-        {
-            new SlashCommandBuilder().WithName("사이퍼즈").WithDescription("랜덤 이미지"),
-            ImageCyphers
-        },
-        {
             new SlashCommandBuilder().WithName("누나").WithDescription("랜덤 이미지"),
             ImageReimusNunna
         },
@@ -101,10 +93,6 @@ public partial class MainBot
         {
             new SlashCommandBuilder().WithName("31").WithDescription("랜덤 이미지"),
             ImageBeskin31
-        },
-        {
-            new SlashCommandBuilder().WithName("똥").WithDescription("랜덤 이미지"),
-            ImagePoo
         },
         {
             new SlashCommandBuilder().WithName("할짝").WithDescription("랜덤 이미지"),
@@ -159,14 +147,6 @@ public partial class MainBot
             ImageFunCoolSexy
         },
         {
-            new SlashCommandBuilder().WithName("뭐지").WithDescription("랜덤 이미지"),
-            ImageWhat
-        },
-        {
-            new SlashCommandBuilder().WithName("최선").WithDescription("랜덤 이미지"),
-            ImageDoesTheBest
-        },
-        {
             new SlashCommandBuilder().WithName("에바").WithDescription("랜덤 이미지"),
             ImageEva
         },
@@ -175,24 +155,12 @@ public partial class MainBot
             ImageShisyashosei
         },
         {
-            new SlashCommandBuilder().WithName("두손두발").WithDescription("랜덤 이미지"),
-            ImageBothHandBothFeet
-        },
-        {
             new SlashCommandBuilder().WithName("이끼끼").WithDescription("랜덤 이미지"),
             ImageRecycle
         },
         {
             new SlashCommandBuilder().WithName("미우").WithDescription("랜덤 이미지"),
             ImageDeliciousMiu
-        },
-        {
-            new SlashCommandBuilder().WithName("피곤").WithDescription("랜덤 이미지"),
-            ImageTired
-        },
-        {
-            new SlashCommandBuilder().WithName("난똥즈").WithDescription("랜덤 이미지"),
-            ImageNanddongs
         },
         {
             new SlashCommandBuilder().WithName("야").WithDescription("랜덤 이미지"),
@@ -223,28 +191,12 @@ public partial class MainBot
             ImageShutTheMouth
         },
         {
-            new SlashCommandBuilder().WithName("생활패턴").WithDescription("랜덤 이미지"),
-            ImageLifePattern
-        },
-        {
             new SlashCommandBuilder().WithName("죽어").WithDescription("랜덤 이미지"),
             ImageDie
         },
         {
-            new SlashCommandBuilder().WithName("부숴버리겠어").WithDescription("랜덤 이미지"),
-            ImageWillCrashYou
-        },
-        {
-            new SlashCommandBuilder().WithName("사방").WithDescription("랜덤 이미지"),
-            ImageSabang
-        },
-        {
             new SlashCommandBuilder().WithName("돼지").WithDescription("랜덤 이미지"),
             ImagePig
-        },
-        {
-            new SlashCommandBuilder().WithName("인생").WithDescription("랜덤 이미지"),
-            ImageLife
         },
         {
             new SlashCommandBuilder().WithName("엑조디아").WithDescription("랜덤 이미지"),

@@ -199,18 +199,39 @@ public partial class MainBot : IDisposable
 
     private async Task InitializeCommandsAsync()
     {
-        foreach (var builtCommand in _commands.Keys.Select(builder => builder.Build()))
+        await _client.Rest.DeleteAllGlobalCommandsAsync();
+        // var commandTasks = _commands.Keys
+        //     .Select(builder => builder.Build())
+        //     .Select(async command =>
+        //     {
+        //         try
+        //         {
+        //             await _client.CreateGlobalApplicationCommandAsync(command);
+        //             Log.Info($"글로벌에 \"{command.Name}\" 명령어 등록 완료");
+        //         }
+        //         catch (Exception ex)
+        //         {
+        //             Log.Fatal(ex, $"글로벌에 \"{command.Name}\" 명령어 등록 실패");
+        //         }
+        //     })
+        //     .ToArray();
+
+        //await Task.WhenAll(commandTasks);
+
+        var commandTasks = _commands.Keys
+            .Select(builder => builder.Build());
+        await Parallel.ForEachAsync(commandTasks, async (command, cancellationToken) =>
         {
             try
             {
-                await _client.CreateGlobalApplicationCommandAsync(builtCommand);
-                Log.Info($"글로벌에 \"{builtCommand.Name}\" 명령어 등록 완료");
+                await _client.CreateGlobalApplicationCommandAsync(command);
+                Log.Info($"글로벌에 \"{command.Name}\" 명령어 등록 완료");
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, $"글로벌에 \"{builtCommand.Name}\" 명령어 등록 실패");
+                Log.Fatal(ex, $"글로벌에 \"{command.Name}\" 명령어 등록 실패");
             }
-        }
+        });
     }
 
     private async Task ReactionSlashCommandAsync(SocketSlashCommand command)

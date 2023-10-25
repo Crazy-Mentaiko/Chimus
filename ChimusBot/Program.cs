@@ -1,4 +1,5 @@
-﻿using ChimusBot.Bots;
+﻿using System.Runtime.InteropServices;
+using ChimusBot.Bots;
 using ChimusBot.ConfigModel;
 using ChimusBot.Utils;
 
@@ -13,6 +14,11 @@ var botConfig = BotConfig.LoadFromFile() ?? BotConfig.LoadFromEnvironment();
 DbHelper.Initialize(botConfig);
 
 var chimusBot = new MainBot(botConfig);
+
+PosixSignalRegistration.Create(PosixSignal.SIGTERM, context =>
+{
+    DbHelper.Dispose();
+});
 
 chimusBot.RunAsync().GetAwaiter().GetResult();
 

@@ -221,18 +221,11 @@ partial class MainBot
         "want_to_go_home_9.jpg", "want_to_go_home_10.jpg", "want_to_go_home_11.jpg", "want_to_go_home_12.jpg",
         "want_to_go_home_13.jpg", "want_to_go_home_14.jpg", "want_to_go_home_15.jpg", "want_to_go_home_16.jpg",
     };
-    private static readonly string[] ImageSunkistList = {"sunkist.png"};
-    private static readonly string[] ImageCyphersList =
-    {
-        "cyphers_1.jpg", "cyphers_2.jpg", "cyphers_3.jpg", "cyphers_4.jpg", "cyphers_5.jpg", "cyphers_6.jpg",
-        "cyphers_8.jpg", "cyphers_9.jpg", "cyphers_10.jpg", "cyphers_11.jpg",
-    };
     private static readonly string[] ImageReimusNunnaList = {"sister_remmu.jpg"};
     private static readonly string[] ImageXylophoneList = {"xylophone.png"};
     private static readonly string[] ImageSaidNoList = {"i_took_thats_no.png", "i_took_thats_no_2.jpg"};
     private static readonly string[] ImageRuinmanList = {"rivo.jpg"};
     private static readonly string[] ImageBeskin31List = {"thirties_1.png", "thirties_2.png", "thirties_3.jpg"};
-    private static readonly string[] ImagePooList = {"dung.jpg"};
     private static readonly string[] ImageLickingList =
     {
         "licking_1.jpg", "licking_2.jpg", "licking_3.jpg", "licking_4.png", "licking_5.jpg", "licking_6.jpg",
@@ -262,21 +255,13 @@ partial class MainBot
     {
         "yakusoku.gif", "yakusoku_2.jpg",
     };
-    private static readonly string[] ImageWhatList = {"wat.gif"};
-    private static readonly string[] ImageDoesTheBestList = {"do_the_best.png"};
     private static readonly string[] ImageEvaList =
     {
         "eva.jpg", "eva-25.png",
     };
     private static readonly string[] ImageShisyashoseiList = {"shisyashosei.png"};
-    private static readonly string[] ImageBothHandBothFeetList = {"dsdb.jpg"};
     private static readonly string[] ImageRecycleList = {"ecyc_e.mp4"};
     private static readonly string[] ImageDeliciousMiuList = {"delicious_miu.png"};
-    private static readonly string[] ImageTiredList = {"tired.jpg"};
-    private static readonly string[] ImageNanddongsList =
-    {
-        "nanddongs_1.jpg", "nanddongs_2.jpg",
-    };
     private static readonly string[] ImageYaList = {"ya.mp4"};
     private static readonly string[] ImageGotSteamList = {"yeol_bat_ne.jpg"};
     private static readonly string[] ImageVoteList = {"vote.mp4"};
@@ -284,24 +269,14 @@ partial class MainBot
     private static readonly string[] ImageAreYouLaughList = {"are_you_laugh.jpg"};
     private static readonly string[] ImageGotoBackList = {"go_to_back.jpg"};
     private static readonly string[] ImageShutTheMouthList = {"shut_the_mouth.jpg"};
-    private static readonly string[] ImageLifePatternList = {"saenghwalpattern.jpg"};
     private static readonly string[] ImageDieList =
     {
         "death_cake_when_saw_3_times.jpg", "death_cake_when_saw_3_times_renewal.jpg",
         "otagai_korose.jpg", "just_die.jpg"
     };
-    private static readonly string[] ImageWillCrashYouList = {"i_will_crash_you.jpg"};
-    private static readonly string[] ImageSabangList =
-    {
-        "pig_1.png", "pig_2.png",
-    };
     private static readonly string[] ImagePigList =
     {
         "png_1.png", "pig_2.png", "pig_3.png", "pig_4.png", "pig_5.png", "pig_6.gif"
-    };
-    private static readonly string[] ImageLifeList =
-    {
-        "life_1.png", "life_2.png", "life_3.png",
     };
     private static readonly string[] ImageExodiaList = {"exodia.jpg"};
     private static readonly string[] ImageGiveUpList =
@@ -313,14 +288,11 @@ partial class MainBot
         await command.RespondAsync(RandomUtil.PickOne(MagicalConchList));
 
     private static async Task ImageHome(SocketSlashCommand command) => await SendImageAsync(command, ImageHomeList);
-    private static async Task ImageSunkist(SocketSlashCommand command) => await SendImageAsync(command, ImageSunkistList);
-    private static async Task ImageCyphers(SocketSlashCommand command) => await SendImageAsync(command, ImageCyphersList);
     private static async Task ImageReimusNunna(SocketSlashCommand command) => await SendImageAsync(command, ImageReimusNunnaList);
     private static async Task ImageXylophone(SocketSlashCommand command) => await SendImageAsync(command, ImageXylophoneList);
     private static async Task ImageSaidNo(SocketSlashCommand command) => await SendImageAsync(command, ImageSaidNoList);
     private static async Task ImageRuinman(SocketSlashCommand command) => await SendImageAsync(command, ImageRuinmanList);
     private static async Task ImageBeskin31(SocketSlashCommand command) => await SendImageAsync(command, ImageBeskin31List);
-    private static async Task ImagePoo(SocketSlashCommand command) => await SendImageAsync(command, ImagePooList);
     private static async Task ImageLicking(SocketSlashCommand command) => await SendImageAsync(command, ImageLickingList);
     private static async Task ImageBambooSpear(SocketSlashCommand command) => await SendImageAsync(command, ImageBambooSpearList);
     private static async Task ImageKnewIt(SocketSlashCommand command) => await SendImageAsync(command, ImageKnewItList);
@@ -334,15 +306,10 @@ partial class MainBot
     private static async Task ImageYouToo(SocketSlashCommand command) => await SendImageAsync(command, ImageYouTooList);
     private static async Task ImageMeToo(SocketSlashCommand command) => await SendImageAsync(command, ImageMeTooList);
     private static async Task ImageFunCoolSexy(SocketSlashCommand command) => await SendImageAsync(command, ImageFunCoolSexyList);
-    private static async Task ImageWhat(SocketSlashCommand command) => await SendImageAsync(command, ImageWhatList);
-    private static async Task ImageDoesTheBest(SocketSlashCommand command) => await SendImageAsync(command, ImageDoesTheBestList);
     private static async Task ImageEva(SocketSlashCommand command) => await SendImageAsync(command, ImageEvaList);
     private static async Task ImageShisyashosei(SocketSlashCommand command) => await SendImageAsync(command, ImageShisyashoseiList);
-    private static async Task ImageBothHandBothFeet(SocketSlashCommand command) => await SendImageAsync(command, ImageBothHandBothFeetList);
     private static async Task ImageRecycle(SocketSlashCommand command) => await SendImageAsync(command, ImageRecycleList);
     private static async Task ImageDeliciousMiu(SocketSlashCommand command) => await SendImageAsync(command, ImageDeliciousMiuList);
-    private static async Task ImageTired(SocketSlashCommand command) => await SendImageAsync(command, ImageTiredList);
-    private static async Task ImageNanddongs(SocketSlashCommand command) => await SendImageAsync(command, ImageNanddongsList);
     private static async Task ImageYa(SocketSlashCommand command) => await SendImageAsync(command, ImageYaList);
     private static async Task ImageGotSteam(SocketSlashCommand command) => await SendImageAsync(command, ImageGotSteamList);
     private static async Task ImageVote(SocketSlashCommand command) => await SendImageAsync(command, ImageVoteList);
@@ -350,12 +317,8 @@ partial class MainBot
     private static async Task ImageAreYouLaugh(SocketSlashCommand command) => await SendImageAsync(command, ImageAreYouLaughList);
     private static async Task ImageGotoBack(SocketSlashCommand command) => await SendImageAsync(command, ImageGotoBackList);
     private static async Task ImageShutTheMouth(SocketSlashCommand command) => await SendImageAsync(command, ImageShutTheMouthList);
-    private static async Task ImageLifePattern(SocketSlashCommand command) => await SendImageAsync(command, ImageLifePatternList);
     private static async Task ImageDie(SocketSlashCommand command) => await SendImageAsync(command, ImageDieList);
-    private static async Task ImageWillCrashYou(SocketSlashCommand command) => await SendImageAsync(command, ImageWillCrashYouList);
-    private static async Task ImageSabang(SocketSlashCommand command) => await SendImageAsync(command, ImageSabangList);
     private static async Task ImagePig(SocketSlashCommand command) => await SendImageAsync(command, ImagePigList);
-    private static async Task ImageLife(SocketSlashCommand command) => await SendImageAsync(command, ImageLifeList);
     private static async Task ImageExodia(SocketSlashCommand command) => await SendImageAsync(command, ImageExodiaList);
     private static async Task ImageGiveUp(SocketSlashCommand command) => await SendImageAsync(command, ImageGiveUpList);
 

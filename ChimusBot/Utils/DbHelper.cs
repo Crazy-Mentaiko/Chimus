@@ -18,6 +18,15 @@ public static class DbHelper
         _schedules = _db.GetCollection<Schedule>();
     }
 
+    public static void Dispose()
+    {
+        _birthdays = null;
+        _schedules = null;
+        
+        _db?.Dispose();
+        _db = null;
+    }
+
     public static void Flush()
     {
         _db!.Rebuild();

@@ -9,15 +9,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Discord.Net" Version="3.7.2" />
-      <PackageReference Include="Discord.Net.Commands" Version="3.7.2" />
-      <PackageReference Include="Discord.Net.Core" Version="3.7.2" />
-      <PackageReference Include="Discord.Net.Interactions" Version="3.7.2" />
-      <PackageReference Include="Discord.Net.Rest" Version="3.7.2" />
-      <PackageReference Include="Discord.Net.WebSocket" Version="3.7.2" />
-      <PackageReference Include="LiteDB" Version="5.0.13" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-      <PackageReference Include="NLog" Version="5.0.4" />
+      <PackageReference Include="Discord.Net" Version="3.12.0" />
+      <PackageReference Include="Discord.Net.Commands" Version="3.12.0" />
+      <PackageReference Include="Discord.Net.Core" Version="3.12.0" />
+      <PackageReference Include="Discord.Net.Interactions" Version="3.12.0" />
+      <PackageReference Include="Discord.Net.Rest" Version="3.12.0" />
+      <PackageReference Include="Discord.Net.WebSocket" Version="3.12.0" />
+      <PackageReference Include="LiteDB" Version="5.0.17" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="NLog" Version="5.2.5" />
     </ItemGroup>
 
     <ItemGroup>
@@ -78,7 +78,6 @@
       <None Remove="Resources\dsdb.jpg" />
       <EmbeddedResource Include="Resources\dsdb.jpg" />
       <None Remove="Resources\dung.jpg" />
-      <EmbeddedResource Include="Resources\dung.jpg" />
       <None Remove="Resources\ecyc_e.mp4" />
       <EmbeddedResource Include="Resources\ecyc_e.mp4" />
       <None Remove="Resources\eva.jpg" />
@@ -136,21 +135,14 @@
       <None Remove="Resources\licking_12.gif" />
       <EmbeddedResource Include="Resources\licking_12.gif" />
       <None Remove="Resources\life_1.png" />
-      <EmbeddedResource Include="Resources\life_1.png" />
       <None Remove="Resources\life_2.png" />
-      <EmbeddedResource Include="Resources\life_2.png" />
       <None Remove="Resources\life_3.png" />
-      <EmbeddedResource Include="Resources\life_3.png" />
       <None Remove="Resources\me_too.jpg" />
       <EmbeddedResource Include="Resources\me_too.jpg" />
       <None Remove="Resources\nanddongs_1.jpg" />
-      <EmbeddedResource Include="Resources\nanddongs_1.jpg" />
       <None Remove="Resources\nanddongs_2.jpg" />
-      <EmbeddedResource Include="Resources\nanddongs_2.jpg" />
       <None Remove="Resources\nanddongs_3.gif" />
-      <EmbeddedResource Include="Resources\nanddongs_3.gif" />
       <None Remove="Resources\nanddongs_4.png" />
-      <EmbeddedResource Include="Resources\nanddongs_4.png" />
       <None Remove="Resources\otagai_korose.jpg" />
       <EmbeddedResource Include="Resources\otagai_korose.jpg" />
       <None Remove="Resources\pig_1.png" />
@@ -170,7 +162,6 @@
       <None Remove="Resources\rivo.jpg" />
       <EmbeddedResource Include="Resources\rivo.jpg" />
       <None Remove="Resources\saenghwalpattern.jpg" />
-      <EmbeddedResource Include="Resources\saenghwalpattern.jpg" />
       <None Remove="Resources\shisyashosei.png" />
       <EmbeddedResource Include="Resources\shisyashosei.png" />
       <None Remove="Resources\shut_the_mouth.jpg" />
@@ -188,7 +179,6 @@
       <None Remove="Resources\thirties_3.jpg" />
       <EmbeddedResource Include="Resources\thirties_3.jpg" />
       <None Remove="Resources\tired.jpg" />
-      <EmbeddedResource Include="Resources\tired.jpg" />
       <None Remove="Resources\vote.mp4" />
       <EmbeddedResource Include="Resources\vote.mp4" />
       <None Remove="Resources\want_to_go_home.png" />
