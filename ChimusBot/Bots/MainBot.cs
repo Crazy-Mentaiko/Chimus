@@ -67,7 +67,7 @@ public partial class MainBot : IDisposable
         {
             var now = DateTime.Now;
 
-            if (now.Hour == 0 && now.Minute == 0)
+            if (now is { Hour: 0, Minute: 0 })
             {
                 foreach (var birthday in DbHelper.GetBirthdays(now.Month, now.Day))
                 {
@@ -199,29 +199,29 @@ public partial class MainBot : IDisposable
 
     private async Task InitializeCommandsAsync()
     {
-        await _client.Rest.DeleteAllGlobalCommandsAsync();
-        // var commandTasks = _commands.Keys
-        //     .Select(builder => builder.Build())
-        //     .Select(async command =>
-        //     {
-        //         try
-        //         {
-        //             await _client.CreateGlobalApplicationCommandAsync(command);
-        //             Log.Info($"글로벌에 \"{command.Name}\" 명령어 등록 완료");
-        //         }
-        //         catch (Exception ex)
-        //         {
-        //             Log.Fatal(ex, $"글로벌에 \"{command.Name}\" 명령어 등록 실패");
-        //         }
-        //     })
-        //     .ToArray();
-
-        //await Task.WhenAll(commandTasks);
-
-        var commandTasks = _commands.Keys
-            .Select(builder => builder.Build());
-        await Parallel.ForEachAsync(commandTasks, async (command, cancellationToken) =>
+        var latestCommands = await _client.GetGlobalApplicationCommandsAsync();
+        foreach (var latestCommand in latestCommands)
         {
+            if (_commands.Keys.Any(c => c.Name == latestCommand.Name))
+                continue;
+
+            try
+            {
+                await latestCommand.DeleteAsync();
+                Log.Info($"글로벌에서 \"{latestCommand.Name}\" 명령어 제거 완료");
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, $"글로벌에서 \"{latestCommand.Name}\" 명령어 제거 실패");
+            }
+        }
+
+        foreach (var (builder, _) in _commands)
+        {
+            if (latestCommands.Any(c => c.Name == builder.Name))
+                continue;
+            
+            var command = builder.Build();
             try
             {
                 await _client.CreateGlobalApplicationCommandAsync(command);
@@ -231,7 +231,7 @@ public partial class MainBot : IDisposable
             {
                 Log.Fatal(ex, $"글로벌에 \"{command.Name}\" 명령어 등록 실패");
             }
-        });
+        }
     }
 
     private async Task ReactionSlashCommandAsync(SocketSlashCommand command)
