@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Discord;
 
 namespace ChimusBot.Utils;
 
@@ -20,9 +19,5 @@ public static class EmbedResourceUtil
             : _selfAssembly.GetManifestResourceStream(foundName);
     }
 
-    public static FileAttachment? GetAttachment(string name)
-    {
-        var stream = GetStream(name);
-        return new FileAttachment(stream, name.Contains('/') ? Path.GetFileName(name) : name);
-    }
+    public static string GetFileName(string name) => name.Contains('/') ? Path.GetFileName(name) : name;
 }

@@ -1,17 +1,18 @@
-﻿using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ChimusBot.ConfigModel;
 
-[Serializable, JsonObject]
 public class BotConfig
 {
-    [JsonProperty("discord.token"), JsonRequired]
-    public readonly string DiscordToken = string.Empty;
-    [JsonProperty("db.path")]
-    public readonly string DbPath = "data.db";
+    [JsonPropertyName("discord.token")]
+    public string DiscordToken { get; init; } = string.Empty;
+
+    [JsonPropertyName("db.path")]
+    public string DbPath { get; init; } = "data.db";
 
     private const string BotConfigPath = "./config/chimus.json";
-    
+
     public BotConfig() { }
 
     public BotConfig(string? discordToken, string? dbPath)
@@ -19,16 +20,17 @@ public class BotConfig
         DiscordToken = discordToken ?? DiscordToken;
         DbPath = dbPath ?? DbPath;
         if (string.IsNullOrEmpty(DiscordToken))
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(discordToken));
     }
-    
+
     public static BotConfig? LoadFromFile()
     {
         if (!File.Exists(BotConfigPath))
             return null;
-        
-        using var configFile = File.OpenText(BotConfigPath);
-        return JsonSerializer.CreateDefault().Deserialize<BotConfig>(new JsonTextReader(configFile));
+
+        using var configFile = File.OpenRead(BotConfigPath);
+        var config = JsonSerializer.Deserialize(configFile, BotConfigJsonContext.Default.BotConfig);
+        return config is { DiscordToken.Length: > 0 } ? config : null;
     }
 
     public static BotConfig LoadFromEnvironment()
@@ -39,3 +41,6 @@ public class BotConfig
         );
     }
 }
+
+[JsonSerializable(typeof(BotConfig))]
+internal partial class BotConfigJsonContext : JsonSerializerContext;

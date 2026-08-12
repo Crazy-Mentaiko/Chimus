@@ -1,70 +1,78 @@
 ﻿using System.Text.RegularExpressions;
 using ChimusBot.Utils;
-using Discord;
-using Discord.WebSocket;
+using NetCord;
+using NetCord.Rest;
 
 namespace ChimusBot.Bots;
 
 partial class MainBot
 {
 
-    private static async Task IntroduceChimus(SocketSlashCommand command)
+    private static async Task IntroduceChimus(SlashCommandInteraction command)
     {
         await command.RespondAsync("나는 대륙의 기상 차이무스! 당신들의 생일을 책임진다!");
     }
 
-    private static async Task AddBirthday(SocketSlashCommand command)
+    private static async Task AddBirthday(SlashCommandInteraction command)
     {
-        var target = command.Data.Options.First(option => option.Name == "생일자")?.Value as SocketUser;
-        var birthday = command.Data.Options.First(option => option.Name == "생일")?.Value as string ?? string.Empty;
-        var channel = command.Data.Options.First(option => option.Name == "채널")?.Value as SocketChannel;
+        var targetValue = command.Data.Options.First(option => option.Name == "생일자").Value;
+        var birthday = command.Data.Options.First(option => option.Name == "생일").Value ?? string.Empty;
+        var channelValue = command.Data.Options.First(option => option.Name == "채널").Value;
 
-        if (target == null)
+        if (!ulong.TryParse(targetValue, out var targetId))
         {
             await command.RespondAsync("생일자 입력이 잘못됐어.");
             return;
         }
 
-        if (string.IsNullOrEmpty(birthday) || !Regex.IsMatch(birthday, "[0-1][0-9]-[0-3][0-9]"))
+        if (string.IsNullOrEmpty(birthday) || !BirthdayPattern().IsMatch(birthday))
         {
             await command.RespondAsync("생일 입력이 잘못됐어.");
             return;
         }
 
-        if (channel == null)
+        var resolvedData = command.Data.ResolvedData;
+        if (!ulong.TryParse(channelValue, out var channelId) ||
+            resolvedData is null ||
+            resolvedData.Channels is null ||
+            !resolvedData.Channels.TryGetValue(channelId, out var channel))
         {
             await command.RespondAsync("채널 입력이 잘못됐어.");
             return;
         }
         
-        if (channel is SocketDMChannel)
-            DbHelper.AddBirthday(target.Id, birthday, 0, channel.Id);
-        else if (channel is SocketGuildChannel guildChannel)
-            DbHelper.AddBirthday(target.Id, birthday, guildChannel.Guild.Id, channel.Id);
+        DbHelper.AddBirthday(targetId, birthday, command.GuildId ?? 0, channel.Id);
         DbHelper.Flush();
 
         await command.RespondAsync("생일 입력에 성공했다!");
     }
 
-    private static async Task ShowBirthdays(SocketSlashCommand command)
+    private static async Task ShowBirthdays(SlashCommandInteraction command)
     {
-        var embed = new EmbedBuilder
+        var embed = new EmbedProperties
         {
             Title = "알고 있는 생일자 목록",
             Description = "아래 생일이 되면 뿌린다!",
-            Color = Color.Red
+            Color = new Color(255, 0, 0)
         };
 
+        var fields = new List<EmbedFieldProperties>();
+        var guild = command.Guild;
         foreach (var birthday in DbHelper.GetBirthdays())
         {
-            var targetId = birthday.Target;
-            var user = (command.Channel as SocketGuildChannel)?.Guild.Users.FirstOrDefault(user => user.Id == targetId);
-            if (user == null)
+            if (guild is null || !guild.Users.TryGetValue(birthday.Target, out var user))
                 continue;
-            embed.AddField(name: user.DisplayName, value: birthday.MonthDay, inline: true);
+            fields.Add(new EmbedFieldProperties
+            {
+                Name = user.Nickname ?? user.GlobalName ?? user.Username,
+                Value = birthday.MonthDay,
+                Inline = true,
+            });
         }
 
-        await command.RespondAsync(embed: embed.Build());
+        embed.WithFields(fields);
+
+        await command.RespondAsync(embed: embed);
     }
 
     private static readonly string[] RainbowSixSiegeAttacks =
@@ -85,50 +93,51 @@ partial class MainBot
         "오릭스", "멜루시", "아루니", "썬더버드", "쏜", "그림"
     };
 
-    private static async Task RandomPickR6S(SocketSlashCommand command)
+    private static async Task RandomPickR6S(SlashCommandInteraction command)
     {
-        var isAttack = command.Data.Options.FirstOrDefault(option => option.Name == "공격?")?.Value;
-        var containsRoe = command.Data.Options.FirstOrDefault(option => option.Name == "예비병력포함?")?.Value;
+        var isAttack = bool.TryParse(command.Data.Options.FirstOrDefault(option => option.Name == "공격")?.Value, out var attack) && attack;
+        var containsRoe = bool.TryParse(command.Data.Options.FirstOrDefault(option => option.Name == "예비병력")?.Value, out var roe) && roe;
 
-        var pool = isAttack is true ? RainbowSixSiegeAttacks : RainbowSixSiegeDefends;
+        var pool = isAttack ? RainbowSixSiegeAttacks : RainbowSixSiegeDefends;
 
-        var index = RandomUtil.Random(containsRoe is true ? 0 : 1, pool.Length);
+        var index = RandomUtil.Random(containsRoe ? 0 : 1, pool.Length);
         var found = pool[index];
 
         await command.RespondAsync(text: $"`{found}` 해");
     }
 
-    private static async Task PickOne(SocketSlashCommand command)
+    private static async Task PickOne(SlashCommandInteraction command)
     {
         var items = new[]
         {
-            command.Data.Options.First(option => option.Name == "항목1").Value as string,
-            command.Data.Options.First(option => option.Name == "항목2").Value as string,
-            command.Data.Options.FirstOrDefault(option => option.Name == "항목3")?.Value as string,
-            command.Data.Options.FirstOrDefault(option => option.Name == "항목4")?.Value as string,
-            command.Data.Options.FirstOrDefault(option => option.Name == "항목5")?.Value as string,
-            command.Data.Options.FirstOrDefault(option => option.Name == "항목6")?.Value as string,
-            command.Data.Options.FirstOrDefault(option => option.Name == "항목7")?.Value as string,
-            command.Data.Options.FirstOrDefault(option => option.Name == "항목8")?.Value as string,
-            command.Data.Options.FirstOrDefault(option => option.Name == "항목9")?.Value as string,
-            command.Data.Options.FirstOrDefault(option => option.Name == "항목10")?.Value as string,
+            command.Data.Options.First(option => option.Name == "항목1").Value,
+            command.Data.Options.First(option => option.Name == "항목2").Value,
+            command.Data.Options.FirstOrDefault(option => option.Name == "항목3")?.Value,
+            command.Data.Options.FirstOrDefault(option => option.Name == "항목4")?.Value,
+            command.Data.Options.FirstOrDefault(option => option.Name == "항목5")?.Value,
+            command.Data.Options.FirstOrDefault(option => option.Name == "항목6")?.Value,
+            command.Data.Options.FirstOrDefault(option => option.Name == "항목7")?.Value,
+            command.Data.Options.FirstOrDefault(option => option.Name == "항목8")?.Value,
+            command.Data.Options.FirstOrDefault(option => option.Name == "항목9")?.Value,
+            command.Data.Options.FirstOrDefault(option => option.Name == "항목10")?.Value,
         };
         var choiceList = items.Where(item => !string.IsNullOrEmpty(item)).ToArray();
 
         await command.RespondAsync($"이거: {RandomUtil.PickOne(choiceList)} 💁");
     }
 
-    private static async Task Eue(SocketSlashCommand command)
+    private static async Task Eue(SlashCommandInteraction command)
     {
-        if (command.Channel is not SocketGuildChannel guildChannel)
+        var guild = command.Guild;
+        if (guild is null)
         {
             await command.RespondAsync("서버 내에서만 쓸 수 있어.");
             return;
         }
 
-        var ruin1 = guildChannel.Guild.Emotes.FirstOrDefault(emote => emote.Name == "longruin1");
-        var ruin2 = guildChannel.Guild.Emotes.FirstOrDefault(emote => emote.Name == "longruin2");
-        var ruin3 = guildChannel.Guild.Emotes.FirstOrDefault(emote => emote.Name == "longruin3");
+        var ruin1 = guild.Emojis.Values.FirstOrDefault(emote => emote.Name == "longruin1");
+        var ruin2 = guild.Emojis.Values.FirstOrDefault(emote => emote.Name == "longruin2");
+        var ruin3 = guild.Emojis.Values.FirstOrDefault(emote => emote.Name == "longruin3");
 
         if (ruin1 == null || ruin2 == null || ruin3 == null)
         {
@@ -139,18 +148,29 @@ partial class MainBot
         await command.RespondAsync($"<:longruin1:{ruin1.Id}><:longruin2:{ruin2.Id}><:longruin3:{ruin3.Id}>");
     }
 
-    private static async Task AddSchedule(SocketSlashCommand command)
+    private static async Task AddSchedule(SlashCommandInteraction command)
     {
-        var guild = (command.Channel as SocketGuildChannel)?.Guild;
+        var guild = command.Guild;
         if (guild == null)
         {
             await command.RespondAsync("서버 내에서만 사용할 수 있어. 🧏");
             return;
         }
         
-        var message = command.Data.Options.First(option => option.Name == "메시지").Value as string ?? string.Empty;
-        var channel = command.Data.Options.First(option => option.Name == "채널").Value as SocketTextChannel ?? command.Channel;
-        var dateTime = command.Data.Options.First(option => option.Name == "일시").Value as string ?? string.Empty;
+        var message = command.Data.Options.First(option => option.Name == "메시지").Value ?? string.Empty;
+        var channelValue = command.Data.Options.First(option => option.Name == "채널").Value;
+        var dateTime = command.Data.Options.First(option => option.Name == "일시").Value ?? string.Empty;
+
+        var resolvedData = command.Data.ResolvedData;
+        if (!ulong.TryParse(channelValue, out var channelId) ||
+            resolvedData is null ||
+            resolvedData.Channels is null ||
+            !resolvedData.Channels.TryGetValue(channelId, out var channel) ||
+            channel is not IGuildChannel)
+        {
+            await command.RespondAsync("채널 값이 잘못됐음. 🧏");
+            return;
+        }
         
         if (string.IsNullOrEmpty(dateTime) || !DateTime.TryParse(dateTime, out var scheduleDateTime))
         {
@@ -164,25 +184,25 @@ partial class MainBot
         await command.RespondAsync("일정 등록했음. 🙆");
     }
 
-    private static async Task RemoveSchedule(SocketSlashCommand command)
+    private static async Task RemoveSchedule(SlashCommandInteraction command)
     {
-        var no = command.Data.Options.First(option => option.Name == "번호")?.Value;
-        if (no is not long scheduleId)
+        var no = command.Data.Options.First(option => option.Name == "번호").Value;
+        if (!int.TryParse(no, out var scheduleId))
         {
             await command.RespondAsync("값이 잘못됐습니다 🧏");
             return;
         }
             
-        DbHelper.RemoveSchedule((int)scheduleId);
+        DbHelper.RemoveSchedule(scheduleId);
         DbHelper.Flush();
         
         await command.RespondAsync("일정 제거했음. 🙆");
     }
 
-    private static async Task ListupSchedules(SocketSlashCommand command)
+    private static async Task ListupSchedules(SlashCommandInteraction command)
     {
-        var embed = new EmbedBuilder()
-            .WithTitle("일정이 다음과 같이 등록돼있어. 💁");
+        var embed = new EmbedProperties().WithTitle("일정이 다음과 같이 등록돼있어. 💁");
+        var fields = new List<EmbedFieldProperties>();
             
         foreach (var schedule in DbHelper.GetSchedules())
         {
@@ -195,19 +215,19 @@ partial class MainBot
             var guildId = ulong.Parse(channelInfo[..colonPosition]);
             var channelId = ulong.Parse(channelInfo[(colonPosition + 1)..]);
 
-            var guild = Instance!._client.Guilds.First(guild => guild.Id == guildId);
-            var channel = guild?.TextChannels.First(channel => channel.Id == channelId);
-
-            if (channel != null && command.Channel is SocketGuildChannel commandChannel && commandChannel.Guild.Id == guild?.Id)
+            if (Instance!._client.Cache.Guilds.TryGetValue(guildId, out var guild) &&
+                guild.Channels.TryGetValue(channelId, out var channel) &&
+                channel is TextGuildChannel &&
+                command.GuildId == guildId)
             {
-                embed
-                    .AddField("#", id, true)
-                    .AddField("메시지", message, true)
-                    .AddField("채널 / 일정", $"<#{channelId}> / {scheduled}", true);
+                fields.Add(new EmbedFieldProperties { Name = "#", Value = id.ToString(), Inline = true });
+                fields.Add(new EmbedFieldProperties { Name = "메시지", Value = message, Inline = true });
+                fields.Add(new EmbedFieldProperties { Name = "채널 / 일정", Value = $"<#{channelId}> / {scheduled}", Inline = true });
             }
         }
 
-        await command.RespondAsync(embed: embed.Build());
+        embed.WithFields(fields);
+        await command.RespondAsync(embed: embed);
     }
 
     private static readonly string[] MagicalConchList = {
@@ -284,52 +304,58 @@ partial class MainBot
         "giveup.png", "giveup_2.jpg"
     };
 
-    private static async Task MagicalConch(SocketSlashCommand command) =>
+    private static async Task MagicalConch(SlashCommandInteraction command) =>
         await command.RespondAsync(RandomUtil.PickOne(MagicalConchList));
 
-    private static async Task ImageHome(SocketSlashCommand command) => await SendImageAsync(command, ImageHomeList);
-    private static async Task ImageReimusNunna(SocketSlashCommand command) => await SendImageAsync(command, ImageReimusNunnaList);
-    private static async Task ImageXylophone(SocketSlashCommand command) => await SendImageAsync(command, ImageXylophoneList);
-    private static async Task ImageSaidNo(SocketSlashCommand command) => await SendImageAsync(command, ImageSaidNoList);
-    private static async Task ImageRuinman(SocketSlashCommand command) => await SendImageAsync(command, ImageRuinmanList);
-    private static async Task ImageBeskin31(SocketSlashCommand command) => await SendImageAsync(command, ImageBeskin31List);
-    private static async Task ImageLicking(SocketSlashCommand command) => await SendImageAsync(command, ImageLickingList);
-    private static async Task ImageBambooSpear(SocketSlashCommand command) => await SendImageAsync(command, ImageBambooSpearList);
-    private static async Task ImageKnewIt(SocketSlashCommand command) => await SendImageAsync(command, ImageKnewItList);
-    private static async Task ImageGoSleep(SocketSlashCommand command) => await SendImageAsync(command, ImageGoSleepList);
-    private static async Task ImageSolution(SocketSlashCommand command) => await SendImageAsync(command, ImageSolutionList);
-    private static async Task ImageDeadmans(SocketSlashCommand command) => await SendImageAsync(command, ImageDeadmansList);
-    private static async Task ImageChimus(SocketSlashCommand command) => await SendImageAsync(command, ImageChimusList);
-    private static async Task ImageKkang(SocketSlashCommand command) => await SendImageAsync(command, ImageKkangList);
-    private static async Task ImageCockroach(SocketSlashCommand command) => await SendImageAsync(command, ImageCockroachList);
-    private static async Task ImageZzol(SocketSlashCommand command) => await SendImageAsync(command, ImageZzolList);
-    private static async Task ImageYouToo(SocketSlashCommand command) => await SendImageAsync(command, ImageYouTooList);
-    private static async Task ImageMeToo(SocketSlashCommand command) => await SendImageAsync(command, ImageMeTooList);
-    private static async Task ImageFunCoolSexy(SocketSlashCommand command) => await SendImageAsync(command, ImageFunCoolSexyList);
-    private static async Task ImageEva(SocketSlashCommand command) => await SendImageAsync(command, ImageEvaList);
-    private static async Task ImageShisyashosei(SocketSlashCommand command) => await SendImageAsync(command, ImageShisyashoseiList);
-    private static async Task ImageRecycle(SocketSlashCommand command) => await SendImageAsync(command, ImageRecycleList);
-    private static async Task ImageDeliciousMiu(SocketSlashCommand command) => await SendImageAsync(command, ImageDeliciousMiuList);
-    private static async Task ImageYa(SocketSlashCommand command) => await SendImageAsync(command, ImageYaList);
-    private static async Task ImageGotSteam(SocketSlashCommand command) => await SendImageAsync(command, ImageGotSteamList);
-    private static async Task ImageVote(SocketSlashCommand command) => await SendImageAsync(command, ImageVoteList);
-    private static async Task ImageGaepan(SocketSlashCommand command) => await SendImageAsync(command, ImageGaepanList);
-    private static async Task ImageAreYouLaugh(SocketSlashCommand command) => await SendImageAsync(command, ImageAreYouLaughList);
-    private static async Task ImageGotoBack(SocketSlashCommand command) => await SendImageAsync(command, ImageGotoBackList);
-    private static async Task ImageShutTheMouth(SocketSlashCommand command) => await SendImageAsync(command, ImageShutTheMouthList);
-    private static async Task ImageDie(SocketSlashCommand command) => await SendImageAsync(command, ImageDieList);
-    private static async Task ImagePig(SocketSlashCommand command) => await SendImageAsync(command, ImagePigList);
-    private static async Task ImageExodia(SocketSlashCommand command) => await SendImageAsync(command, ImageExodiaList);
-    private static async Task ImageGiveUp(SocketSlashCommand command) => await SendImageAsync(command, ImageGiveUpList);
+    private static async Task ImageHome(SlashCommandInteraction command) => await SendImageAsync(command, ImageHomeList);
+    private static async Task ImageReimusNunna(SlashCommandInteraction command) => await SendImageAsync(command, ImageReimusNunnaList);
+    private static async Task ImageXylophone(SlashCommandInteraction command) => await SendImageAsync(command, ImageXylophoneList);
+    private static async Task ImageSaidNo(SlashCommandInteraction command) => await SendImageAsync(command, ImageSaidNoList);
+    private static async Task ImageRuinman(SlashCommandInteraction command) => await SendImageAsync(command, ImageRuinmanList);
+    private static async Task ImageBeskin31(SlashCommandInteraction command) => await SendImageAsync(command, ImageBeskin31List);
+    private static async Task ImageLicking(SlashCommandInteraction command) => await SendImageAsync(command, ImageLickingList);
+    private static async Task ImageBambooSpear(SlashCommandInteraction command) => await SendImageAsync(command, ImageBambooSpearList);
+    private static async Task ImageKnewIt(SlashCommandInteraction command) => await SendImageAsync(command, ImageKnewItList);
+    private static async Task ImageGoSleep(SlashCommandInteraction command) => await SendImageAsync(command, ImageGoSleepList);
+    private static async Task ImageSolution(SlashCommandInteraction command) => await SendImageAsync(command, ImageSolutionList);
+    private static async Task ImageDeadmans(SlashCommandInteraction command) => await SendImageAsync(command, ImageDeadmansList);
+    private static async Task ImageChimus(SlashCommandInteraction command) => await SendImageAsync(command, ImageChimusList);
+    private static async Task ImageKkang(SlashCommandInteraction command) => await SendImageAsync(command, ImageKkangList);
+    private static async Task ImageCockroach(SlashCommandInteraction command) => await SendImageAsync(command, ImageCockroachList);
+    private static async Task ImageZzol(SlashCommandInteraction command) => await SendImageAsync(command, ImageZzolList);
+    private static async Task ImageYouToo(SlashCommandInteraction command) => await SendImageAsync(command, ImageYouTooList);
+    private static async Task ImageMeToo(SlashCommandInteraction command) => await SendImageAsync(command, ImageMeTooList);
+    private static async Task ImageFunCoolSexy(SlashCommandInteraction command) => await SendImageAsync(command, ImageFunCoolSexyList);
+    private static async Task ImageEva(SlashCommandInteraction command) => await SendImageAsync(command, ImageEvaList);
+    private static async Task ImageShisyashosei(SlashCommandInteraction command) => await SendImageAsync(command, ImageShisyashoseiList);
+    private static async Task ImageRecycle(SlashCommandInteraction command) => await SendImageAsync(command, ImageRecycleList);
+    private static async Task ImageDeliciousMiu(SlashCommandInteraction command) => await SendImageAsync(command, ImageDeliciousMiuList);
+    private static async Task ImageYa(SlashCommandInteraction command) => await SendImageAsync(command, ImageYaList);
+    private static async Task ImageGotSteam(SlashCommandInteraction command) => await SendImageAsync(command, ImageGotSteamList);
+    private static async Task ImageVote(SlashCommandInteraction command) => await SendImageAsync(command, ImageVoteList);
+    private static async Task ImageGaepan(SlashCommandInteraction command) => await SendImageAsync(command, ImageGaepanList);
+    private static async Task ImageAreYouLaugh(SlashCommandInteraction command) => await SendImageAsync(command, ImageAreYouLaughList);
+    private static async Task ImageGotoBack(SlashCommandInteraction command) => await SendImageAsync(command, ImageGotoBackList);
+    private static async Task ImageShutTheMouth(SlashCommandInteraction command) => await SendImageAsync(command, ImageShutTheMouthList);
+    private static async Task ImageDie(SlashCommandInteraction command) => await SendImageAsync(command, ImageDieList);
+    private static async Task ImagePig(SlashCommandInteraction command) => await SendImageAsync(command, ImagePigList);
+    private static async Task ImageExodia(SlashCommandInteraction command) => await SendImageAsync(command, ImageExodiaList);
+    private static async Task ImageGiveUp(SlashCommandInteraction command) => await SendImageAsync(command, ImageGiveUpList);
 
-    private static async Task SendImageAsync(SocketInteraction command, string[] imageList)
+    private static async Task SendImageAsync(SlashCommandInteraction command, string[] imageList)
     {
-        var attachment = EmbedResourceUtil.GetAttachment(RandomUtil.PickOne(imageList));
-        if (attachment == null)
+        var resourceName = RandomUtil.PickOne(imageList);
+        var stream = EmbedResourceUtil.GetStream(resourceName);
+        if (stream is null)
         {
             await command.RespondAsync("문제가 발생했음!");
             return;
         }
-        await command.RespondWithFileAsync(attachment.Value);
+
+        await using (stream)
+            await command.RespondWithFileAsync(stream, EmbedResourceUtil.GetFileName(resourceName));
     }
+
+    [GeneratedRegex("^[0-1][0-9]-[0-3][0-9]$")]
+    private static partial Regex BirthdayPattern();
 }

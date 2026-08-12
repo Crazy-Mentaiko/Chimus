@@ -13,7 +13,7 @@ Log.Info(" \\____/\\_| |_/\\___/\\_|  |_/\\___/\\____/ ");
 var botConfig = BotConfig.LoadFromFile() ?? BotConfig.LoadFromEnvironment();
 DbHelper.Initialize(botConfig);
 
-var chimusBot = new MainBot(botConfig);
+using var chimusBot = new MainBot(botConfig);
 
 PosixSignalRegistration.Create(PosixSignal.SIGTERM, context =>
 {

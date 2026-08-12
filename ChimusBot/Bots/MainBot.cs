@@ -1,261 +1,188 @@
-﻿using ChimusBot.ConfigModel;
+using ChimusBot.ConfigModel;
 using ChimusBot.Utils;
-using Discord;
-using Discord.Interactions.Builders;
-using Discord.WebSocket;
-using SlashCommandBuilder = Discord.SlashCommandBuilder;
+using NetCord;
+using NetCord.Gateway;
+using NetCord.Rest;
 
 namespace ChimusBot.Bots;
 
 public partial class MainBot : IDisposable
 {
     public static MainBot? Instance { get; private set; }
-    
-    private readonly DiscordSocketClient _client;
-    private readonly BotConfig _botConfig;
-    
-    public bool IsRunning => _client.Status != UserStatus.Offline;
-    
+
+    private readonly GatewayClient _client;
+    private bool _disposed;
+
+    public bool IsRunning => _client.Status != WebSocketStatus.Disconnected;
+
     public MainBot(BotConfig botConfig)
     {
-        _client = new DiscordSocketClient(new DiscordSocketConfig
+        _client = new GatewayClient(new BotToken(botConfig.DiscordToken), new GatewayClientConfiguration
         {
-            AlwaysDownloadUsers = true,
-            MessageCacheSize = 512,
-            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.GuildMembers,
+            Intents = GatewayIntents.AllNonPrivileged | GatewayIntents.GuildUsers,
         });
-
-        _botConfig = botConfig;
 
         Instance = this;
     }
 
-    ~MainBot()
-    {
-        Dispose(false);
-    }
-    
     public void Dispose()
     {
-        Dispose(true);
+        if (_disposed)
+            return;
+
+        _client.Dispose();
+        Instance = null;
+        _disposed = true;
         GC.SuppressFinalize(this);
     }
 
-    protected virtual void Dispose(bool disposing)
-    {
-        _client.Dispose();
-
-        Instance = null;
-    }
-    
     public async Task RunAsync()
     {
-        _client.Connected += OnConnected;
-        _client.Disconnected += OnDisconnected;
+        _client.Connect += OnConnected;
+        _client.Disconnect += OnDisconnected;
         _client.Ready += OnReady;
-        
-        _client.MessageReceived += OnMessageReceived;
-        _client.MessageUpdated += OnMessageUpdated;
-        _client.MessageDeleted += OnMessageDeleted;
+        _client.InteractionCreate += OnInteractionCreate;
 
-        _client.SlashCommandExecuted += OnSlashCommandExecuted;
-        
-        await _client.LoginAsync(TokenType.Bot, _botConfig.DiscordToken);
-        await _client.StartAsync();
-        
+        var presence = new PresenceProperties(UserStatusType.Online)
+            .AddActivities(new UserActivityProperties(
+                "명란젓의 체력을 책임진다. 부엉성기사 짭짭무",
+                UserActivityType.Playing));
+
+        await _client.StartAsync(presence);
+
         while (IsRunning)
         {
-            var now = DateTime.Now;
+            await RunScheduledJobsAsync();
 
-            if (now is { Hour: 0, Minute: 0 })
-            {
-                foreach (var birthday in DbHelper.GetBirthdays(now.Month, now.Day))
-                {
-                    if (birthday.Guild == 0)
-                    {
-                        // DM
-                        Log.Info("Not implemented for DM");
-                    }
-                    else
-                    {
-                        var guild = _client.Guilds.FirstOrDefault(guild => guild.Id == birthday.Guild);
-                        if (guild == null)
-                        {
-                            Log.Error("서버를 찾을 수 없었습니다.");
-                            continue;
-                        }
-
-                        var channel = guild.Channels.FirstOrDefault(channel => channel.Id == birthday.Channel);
-                        if (channel == null)
-                        {
-                            Log.Error("채널을 찾을 수 없었습니다.");
-                            continue;
-                        }
-
-                        if (channel is not SocketTextChannel textChannel)
-                        {
-                            Log.Error("텍스트 채널이 아닙니다.");
-                            continue;
-                        }
-
-                        await textChannel.SendMessageAsync($"🙌오늘은 <@{birthday.Target}>의 생일!👏");
-                        var chimusEmoji = guild.Emotes.FirstOrDefault(emote => emote.Name == "china_reimus");
-                        if (chimusEmoji != null)
-                            await textChannel.SendMessageAsync($"<:china_reimus:{chimusEmoji.Id}>");
-                    }
-                }
-            }
-            
-            var matchedSchedules = DbHelper.GetSchedules().Where(schedule =>
-            {
-                var dateTime = schedule.DateTime;
-                return dateTime.Date == now.Date && dateTime.Hour == now.Hour && dateTime.Minute == now.Minute;
-            }).ToArray();
-            
-            foreach (var schedule in matchedSchedules)
-            {
-                Log.Info($"스케쥴: ID: {schedule.Id}, 채널 - {schedule.TargetChannel}, 메시지: {schedule.Message}");
-                
-                var guildAndChannel = schedule.TargetChannel;
-                var colonPosition = guildAndChannel.IndexOf(':');
-                var guildId = ulong.Parse(guildAndChannel[..colonPosition]);
-                var channelId = ulong.Parse(guildAndChannel[(colonPosition + 1)..]);
-
-                var guild = _client.Guilds.FirstOrDefault(guild => guild.Id == guildId);
-                if (guild == null)
-                {
-                    Log.Error($"길드를 못 찾았음: {guildId}");
-                    continue;
-                }
-
-                var channel = guild.TextChannels.First(channel => channel.Id == channelId);
-                if (channel == null)
-                {
-                    Log.Error($"채널을 못 찾았음: {channelId} from {guildId}");
-                    continue;
-                }
-
-                await channel.SendMessageAsync(schedule.Message);
-            }
-            
-            foreach (var schedule in matchedSchedules)
-                DbHelper.RemoveSchedule(schedule.Id);
-            DbHelper.Flush();
-
-            var nowTime = DateTime.Now.TimeOfDay;
-            Thread.Sleep((60 - nowTime.Seconds + 1) * 1000);
+            var now = DateTime.Now.TimeOfDay;
+            await Task.Delay(TimeSpan.FromSeconds(61 - now.Seconds));
         }
     }
 
-    #region Callbacks
-    private async Task OnConnected()
+    private async Task RunScheduledJobsAsync()
+    {
+        var now = DateTime.Now;
+
+        if (now is { Hour: 0, Minute: 0 })
+        {
+            foreach (var birthday in DbHelper.GetBirthdays(now.Month, now.Day))
+            {
+                if (birthday.Guild == 0)
+                {
+                    Log.Info("Not implemented for DM");
+                    continue;
+                }
+
+                if (!_client.Cache.Guilds.TryGetValue(birthday.Guild, out var guild))
+                {
+                    Log.Error("서버를 찾을 수 없었습니다.");
+                    continue;
+                }
+
+                if (!guild.Channels.TryGetValue(birthday.Channel, out var channel) || channel is not TextGuildChannel)
+                {
+                    Log.Error("텍스트 채널을 찾을 수 없었습니다.");
+                    continue;
+                }
+
+                await _client.Rest.SendMessageAsync(birthday.Channel,
+                    new MessageProperties { Content = $"🙌오늘은 <@{birthday.Target}>의 생일!👏" });
+
+                var chimusEmoji = guild.Emojis.Values.FirstOrDefault(emoji => emoji.Name == "china_reimus");
+                if (chimusEmoji is not null)
+                {
+                    await _client.Rest.SendMessageAsync(birthday.Channel,
+                        new MessageProperties { Content = $"<:china_reimus:{chimusEmoji.Id}>" });
+                }
+            }
+        }
+
+        var matchedSchedules = DbHelper.GetSchedules().Where(schedule =>
+        {
+            var dateTime = schedule.DateTime;
+            return dateTime.Date == now.Date && dateTime.Hour == now.Hour && dateTime.Minute == now.Minute;
+        }).ToArray();
+
+        foreach (var schedule in matchedSchedules)
+        {
+            Log.Info($"스케쥴: ID: {schedule.Id}, 채널 - {schedule.TargetChannel}, 메시지: {schedule.Message}");
+
+            var separator = schedule.TargetChannel.IndexOf(':');
+            var guildId = ulong.Parse(schedule.TargetChannel[..separator]);
+            var channelId = ulong.Parse(schedule.TargetChannel[(separator + 1)..]);
+
+            if (!_client.Cache.Guilds.TryGetValue(guildId, out var guild) ||
+                !guild.Channels.TryGetValue(channelId, out var channel) ||
+                channel is not TextGuildChannel)
+            {
+                Log.Error($"텍스트 채널을 못 찾았음: {channelId} from {guildId}");
+                continue;
+            }
+
+            await _client.Rest.SendMessageAsync(channelId, new MessageProperties { Content = schedule.Message });
+        }
+
+        foreach (var schedule in matchedSchedules)
+            DbHelper.RemoveSchedule(schedule.Id);
+
+        if (matchedSchedules.Length > 0)
+            DbHelper.Flush();
+    }
+
+    private ValueTask OnConnected()
     {
         Log.Info("짭무가 Discord 서버에 접속 됨...");
-        await Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
-    private async Task OnDisconnected(Exception ex)
+    private ValueTask OnDisconnected(DisconnectEventArgs args)
     {
-        Log.Fatal(ex, "짭무가 Discord 서버에서 접속 해제 됨...");
-        await Task.CompletedTask;
+        Log.Error($"짭무가 Discord 서버에서 접속 해제 됨... 재접속: {args.Reconnect}");
+        return ValueTask.CompletedTask;
     }
 
-    private async Task OnReady()
+    private async ValueTask OnReady(ReadyEventArgs args)
     {
-        await _client.SetActivityAsync(new Game("명란젓의 체력을 책임진다. 부엉성기사 짭짭무"));
-        await _client.SetStatusAsync(UserStatus.Online);
-        
         Log.Info("짭무 준비 됨.");
-        Log.Info($"짭무 이름: {_client.CurrentUser.Username}#{_client.CurrentUser.Discriminator}");
-        
-        await InitializeCommandsAsync();
+        Log.Info($"짭무 이름: {args.User.Username}");
+
+        foreach (var guildId in args.GuildIds)
+            await _client.RequestGuildUsersAsync(new GuildUsersRequestProperties(guildId));
+
+        await InitializeCommandsAsync(args.ApplicationId);
         Log.Info("명령어 준비 됨.");
-        
-        await Task.CompletedTask;
     }
 
-    private async Task OnMessageReceived(SocketMessage message)
+    private async ValueTask OnInteractionCreate(Interaction interaction)
     {
-        await Task.CompletedTask;
+        if (interaction is SlashCommandInteraction command)
+            await ReactionSlashCommandAsync(command);
     }
 
-    private async Task OnMessageUpdated(Cacheable<IMessage, ulong> beforeMessage, SocketMessage afterMessage, ISocketMessageChannel channel)
+    private async Task InitializeCommandsAsync(ulong applicationId)
     {
-        await Task.CompletedTask;
+        await _client.Rest.BulkOverwriteGlobalApplicationCommandsAsync(
+            applicationId,
+            Commands.Values.Select(command => command.Properties));
     }
 
-    private async Task OnMessageDeleted(Cacheable<IMessage, ulong> deletedMessage, Cacheable<IMessageChannel, ulong> channel)
-    {
-        await Task.CompletedTask;
-    }
-
-    private async Task OnSlashCommandExecuted(SocketSlashCommand command)
-    {
-        await ReactionSlashCommandAsync(command);
-    }
-    #endregion
-    
-    #region Commands
-
-    private async Task InitializeCommandsAsync()
-    {
-        var latestCommands = await _client.GetGlobalApplicationCommandsAsync();
-        foreach (var latestCommand in latestCommands)
-        {
-            if (_commands.Keys.Any(c => c.Name == latestCommand.Name))
-                continue;
-
-            try
-            {
-                await latestCommand.DeleteAsync();
-                Log.Info($"글로벌에서 \"{latestCommand.Name}\" 명령어 제거 완료");
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, $"글로벌에서 \"{latestCommand.Name}\" 명령어 제거 실패");
-            }
-        }
-
-        foreach (var (builder, _) in _commands)
-        {
-            if (latestCommands.Any(c => c.Name == builder.Name))
-                continue;
-            
-            var command = builder.Build();
-            try
-            {
-                await _client.CreateGlobalApplicationCommandAsync(command);
-                Log.Info($"글로벌에 \"{command.Name}\" 명령어 등록 완료");
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, $"글로벌에 \"{command.Name}\" 명령어 등록 실패");
-            }
-        }
-    }
-
-    private async Task ReactionSlashCommandAsync(SocketSlashCommand command)
+    private static async Task ReactionSlashCommandAsync(SlashCommandInteraction command)
     {
         Log.Info($"명령 시도: {command.Data.Name}");
-        var builder = _commands.Keys.FirstOrDefault(builder => builder.Name == command.CommandName);
-        if (builder == null)
+        if (!Commands.TryGetValue(command.Data.Name, out var foundCommand))
         {
             Log.Error("명령어가 등록되어 있지 않음");
             await command.RespondAsync("명령어 설정이 좀 잘못된 거 같은데...");
             return;
         }
-        
-        var foundCommand = _commands[builder];
+
         try
         {
-            await foundCommand.Invoke(command);
+            await foundCommand.Handler(command);
         }
         catch (Exception ex)
         {
             Log.Error($"Error raised: {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
-            //await command.RespondAsync("명령어 사용 중에 오류 발생.");
         }
     }
-
-    #endregion
 }

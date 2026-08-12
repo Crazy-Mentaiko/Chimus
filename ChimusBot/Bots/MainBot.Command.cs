@@ -1,210 +1,114 @@
-﻿using System.Text.RegularExpressions;
-using ChimusBot.Utils;
-using Discord;
-using Discord.Rest;
-using Discord.WebSocket;
+using NetCord;
+using NetCord.Rest;
 
 namespace ChimusBot.Bots;
 
 public partial class MainBot
 {
-    private static readonly Dictionary<SlashCommandBuilder, Func<SocketSlashCommand, Task>> _commands = new()
+    private sealed record CommandDefinition(
+        SlashCommandProperties Properties,
+        Func<SlashCommandInteraction, Task> Handler);
+
+    private static readonly IReadOnlyDictionary<string, CommandDefinition> Commands = CreateCommands();
+
+    private static IReadOnlyDictionary<string, CommandDefinition> CreateCommands()
     {
+        var commands = new Dictionary<string, CommandDefinition>();
+
+        Add("소개", "짭무를 소개합니다.", IntroduceChimus);
+        AddRestricted("생일추가", "생일 목록에 생일을 추가합니다.", AddBirthday,
+            Permissions.Administrator | Permissions.ManageGuild,
+            Option(ApplicationCommandOptionType.User, "생일자", "생일자를 선택", true),
+            Option(ApplicationCommandOptionType.String, "생일", "월월-일일", true),
+            Option(ApplicationCommandOptionType.Channel, "채널", "생일을 표시할 채널", true));
+        Add("생일목록", "생일 목록을 보여줍니다.", ShowBirthdays);
+        Add("랜덤픽", "레인보우식스 시즈 랜덤픽", RandomPickR6S,
+            Option(ApplicationCommandOptionType.Boolean, "공격", "공격이면 true, 수비면 false", true),
+            Option(ApplicationCommandOptionType.Boolean, "예비병력", "예비병력 포함이면 true"));
+        Add("골라줘", "골라준다.", PickOne,
+            Enumerable.Range(1, 10)
+                .Select(index => Option(ApplicationCommandOptionType.String, $"항목{index}", index <= 2 ? "필수" : "선택", index <= 2))
+                .ToArray());
+        Add("으", "으;", Eue);
+        Add("스케줄추가", "스케줄 추가", AddSchedule,
+            Option(ApplicationCommandOptionType.String, "메시지", "스케쥴 실행 시 표시되는 메시지", true),
+            Option(ApplicationCommandOptionType.Channel, "채널", "스케쥴 실행 시 표시할 채널", true),
+            Option(ApplicationCommandOptionType.String, "일시", "연-월-일 시:분 24시간 표기법으로", true));
+        Add("스케줄제거", "스케줄 제거", RemoveSchedule,
+            Option(ApplicationCommandOptionType.Integer, "번호", "스케줄 번호", true));
+        Add("스케줄목록", "스케줄 목록", ListupSchedules);
+        Add("소라고둥", "마법의 소라고둥님", MagicalConch);
+
+        Add("집", "랜덤 이미지", ImageHome);
+        Add("누나", "랜덤 이미지", ImageReimusNunna);
+        Add("띵똥땡똥", "랜덤 이미지", ImageXylophone);
+        Add("아니", "랜덤 이미지", ImageSaidNo);
+        Add("파멸맨", "랜덤 이미지", ImageRuinman);
+        Add("31", "랜덤 이미지", ImageBeskin31);
+        Add("할짝", "랜덤 이미지", ImageLicking);
+        Add("죽창", "랜덤 이미지", ImageBambooSpear);
+        Add("이랄줄", "랜덤 이미지", ImageKnewIt);
+        Add("자라", "랜덤 이미지", ImageGoSleep);
+        Add("해결책", "랜덤 이미지", ImageSolution);
+        Add("망자", "랜덤 이미지", ImageDeadmans);
+        Add("짭무", "랜덤 이미지", ImageChimus);
+        Add("깡", "랜덤 이미지", ImageKkang);
+        Add("고키부리", "랜덤 이미지", ImageCockroach);
+        Add("쫄", "랜덤 이미지", ImageZzol);
+        Add("야너두", "랜덤 이미지", ImageYouToo);
+        Add("야나두", "랜덤 이미지", ImageMeToo);
+        Add("펀쿨섹", "랜덤 이미지", ImageFunCoolSexy);
+        Add("에바", "랜덤 이미지", ImageEva);
+        Add("죽은자의소생", "랜덤 이미지", ImageShisyashosei);
+        Add("이끼끼", "랜덤 이미지", ImageRecycle);
+        Add("미우", "랜덤 이미지", ImageDeliciousMiu);
+        Add("야", "랜덤 이미지", ImageYa);
+        Add("열받네", "랜덤 이미지", ImageGotSteam);
+        Add("투표", "랜덤 이미지", ImageVote);
+        Add("개판", "랜덤 이미지", ImageGaepan);
+        Add("웃어", "랜덤 이미지", ImageAreYouLaugh);
+        Add("돌아가", "랜덤 이미지", ImageGotoBack);
+        Add("입닫아", "랜덤 이미지", ImageShutTheMouth);
+        Add("죽어", "랜덤 이미지", ImageDie);
+        Add("돼지", "랜덤 이미지", ImagePig);
+        Add("엑조디아", "랜덤 이미지", ImageExodia);
+        Add("포기해", "랜덤 이미지", ImageGiveUp);
+
+        return commands;
+
+        void Add(
+            string name,
+            string description,
+            Func<SlashCommandInteraction, Task> handler,
+            params ApplicationCommandOptionProperties[] options)
         {
-            new SlashCommandBuilder().WithName("소개").WithDescription("짭무를 소개합니다."),
-            IntroduceChimus
-        },
+            var properties = new SlashCommandProperties(name, description);
+            if (options is { Length: > 0 })
+                properties.WithOptions(options);
+
+            commands.Add(name, new CommandDefinition(properties, handler));
+        }
+
+        void AddRestricted(
+            string name,
+            string description,
+            Func<SlashCommandInteraction, Task> handler,
+            Permissions permissions,
+            params ApplicationCommandOptionProperties[] options)
         {
-            new SlashCommandBuilder().WithName("생일추가").WithDescription("생일 목록에 생일을 추가합니다.")
-                .AddOption("생일자", ApplicationCommandOptionType.User, "생일자를 멘션 형태로 작성")
-                .AddOption("생일", ApplicationCommandOptionType.String, "월월-일일")
-                .AddOption("채널", ApplicationCommandOptionType.Channel, "생일을 표시할 채널")
-                .WithDefaultMemberPermissions(GuildPermission.Administrator | GuildPermission.ManageGuild),
-            AddBirthday
-        },
-        {
-            new SlashCommandBuilder().WithName("생일목록").WithDescription("생일 목록을 보여줍니다."),
-            ShowBirthdays
-        },
-        {
-            new SlashCommandBuilder().WithName("랜덤픽").WithDescription("레인보우식스 시즈 랜덤픽")
-                .AddOption("공격", ApplicationCommandOptionType.Boolean, "공격이면 true, 수비면 false")
-                .AddOption("예비병력", ApplicationCommandOptionType.Boolean, "예비병력 포함이면 true", isRequired: false),
-            RandomPickR6S
-        },
-        {
-            new SlashCommandBuilder().WithName("골라줘").WithDescription("골라준다.")
-                .AddOption("항목1", ApplicationCommandOptionType.String, "필수", isRequired: true)
-                .AddOption("항목2", ApplicationCommandOptionType.String, "필수", isRequired: true)
-                .AddOption("항목3", ApplicationCommandOptionType.String, "선택", isRequired: false)
-                .AddOption("항목4", ApplicationCommandOptionType.String, "선택", isRequired: false)
-                .AddOption("항목5", ApplicationCommandOptionType.String, "선택", isRequired: false)
-                .AddOption("항목6", ApplicationCommandOptionType.String, "선택", isRequired: false)
-                .AddOption("항목7", ApplicationCommandOptionType.String, "선택", isRequired: false)
-                .AddOption("항목8", ApplicationCommandOptionType.String, "선택", isRequired: false)
-                .AddOption("항목9", ApplicationCommandOptionType.String, "선택", isRequired: false)
-                .AddOption("항목10", ApplicationCommandOptionType.String, "선택", isRequired: false),
-            PickOne
-        },
-        {
-            new SlashCommandBuilder().WithName("으").WithDescription("으;"),
-            Eue
-        },
-        {
-            new SlashCommandBuilder().WithName("스케줄추가").WithDescription("스케줄 추가")
-                .AddOption("메시지", ApplicationCommandOptionType.String, "스케쥴 실행 시 표시되는 메시지")
-                .AddOption("채널", ApplicationCommandOptionType.Channel, "스케쥴 실행 시 표시할 채널")
-                .AddOption("일시", ApplicationCommandOptionType.String, "연-월-일 시:분 24시간 표기법으로"),
-            AddSchedule
-        },
-        {
-            new SlashCommandBuilder().WithName("스케줄제거").WithDescription("스케줄 제거")
-                .AddOption("번호", ApplicationCommandOptionType.Integer, "스케줄 번호"),
-            RemoveSchedule
-        },
-        {
-            new SlashCommandBuilder().WithName("스케줄목록").WithDescription("스케줄 목록"),
-            ListupSchedules
-        },
-        {
-            new SlashCommandBuilder().WithName("소라고둥").WithDescription("마법의 소라고둥님"),
-            MagicalConch
-        },
-        {
-            new SlashCommandBuilder().WithName("집").WithDescription("랜덤 이미지"),
-            ImageHome
-        },
-        {
-            new SlashCommandBuilder().WithName("누나").WithDescription("랜덤 이미지"),
-            ImageReimusNunna
-        },
-        {
-            new SlashCommandBuilder().WithName("띵똥땡똥").WithDescription("랜덤 이미지"),
-            ImageXylophone
-        },
-        {
-            new SlashCommandBuilder().WithName("아니").WithDescription("랜덤 이미지"),
-            ImageSaidNo
-        },
-        {
-            new SlashCommandBuilder().WithName("파멸맨").WithDescription("랜덤 이미지"),
-            ImageRuinman
-        },
-        {
-            new SlashCommandBuilder().WithName("31").WithDescription("랜덤 이미지"),
-            ImageBeskin31
-        },
-        {
-            new SlashCommandBuilder().WithName("할짝").WithDescription("랜덤 이미지"),
-            ImageLicking
-        },
-        {
-            new SlashCommandBuilder().WithName("죽창").WithDescription("랜덤 이미지"),
-            ImageBambooSpear
-        },
-        {
-            new SlashCommandBuilder().WithName("이랄줄").WithDescription("랜덤 이미지"),
-            ImageKnewIt
-        },
-        {
-            new SlashCommandBuilder().WithName("자라").WithDescription("랜덤 이미지"),
-            ImageGoSleep
-        },
-        {
-            new SlashCommandBuilder().WithName("해결책").WithDescription("랜덤 이미지"),
-            ImageSolution
-        },
-        {
-            new SlashCommandBuilder().WithName("망자").WithDescription("랜덤 이미지"),
-            ImageDeadmans
-        },
-        {
-            new SlashCommandBuilder().WithName("짭무").WithDescription("랜덤 이미지"),
-            ImageChimus
-        },
-        {
-            new SlashCommandBuilder().WithName("깡").WithDescription("랜덤 이미지"),
-            ImageKkang
-        },
-        {
-            new SlashCommandBuilder().WithName("고키부리").WithDescription("랜덤 이미지"),
-            ImageCockroach
-        },
-        {
-            new SlashCommandBuilder().WithName("쫄").WithDescription("랜덤 이미지"),
-            ImageZzol
-        },
-        {
-            new SlashCommandBuilder().WithName("야너두").WithDescription("랜덤 이미지"),
-            ImageYouToo
-        },
-        {
-            new SlashCommandBuilder().WithName("야나두").WithDescription("랜덤 이미지"),
-            ImageMeToo
-        },
-        {
-            new SlashCommandBuilder().WithName("펀쿨섹").WithDescription("랜덤 이미지"),
-            ImageFunCoolSexy
-        },
-        {
-            new SlashCommandBuilder().WithName("에바").WithDescription("랜덤 이미지"),
-            ImageEva
-        },
-        {
-            new SlashCommandBuilder().WithName("죽은자의소생").WithDescription("랜덤 이미지"),
-            ImageShisyashosei
-        },
-        {
-            new SlashCommandBuilder().WithName("이끼끼").WithDescription("랜덤 이미지"),
-            ImageRecycle
-        },
-        {
-            new SlashCommandBuilder().WithName("미우").WithDescription("랜덤 이미지"),
-            ImageDeliciousMiu
-        },
-        {
-            new SlashCommandBuilder().WithName("야").WithDescription("랜덤 이미지"),
-            ImageYa
-        },
-        {
-            new SlashCommandBuilder().WithName("열받네").WithDescription("랜덤 이미지"),
-            ImageGotSteam
-        },
-        {
-            new SlashCommandBuilder().WithName("투표").WithDescription("랜덤 이미지"),
-            ImageVote
-        },
-        {
-            new SlashCommandBuilder().WithName("개판").WithDescription("랜덤 이미지"),
-            ImageGaepan
-        },
-        {
-            new SlashCommandBuilder().WithName("웃어").WithDescription("랜덤 이미지"),
-            ImageAreYouLaugh
-        },
-        {
-            new SlashCommandBuilder().WithName("돌아가").WithDescription("랜덤 이미지"),
-            ImageGotoBack
-        },
-        {
-            new SlashCommandBuilder().WithName("입닫아").WithDescription("랜덤 이미지"),
-            ImageShutTheMouth
-        },
-        {
-            new SlashCommandBuilder().WithName("죽어").WithDescription("랜덤 이미지"),
-            ImageDie
-        },
-        {
-            new SlashCommandBuilder().WithName("돼지").WithDescription("랜덤 이미지"),
-            ImagePig
-        },
-        {
-            new SlashCommandBuilder().WithName("엑조디아").WithDescription("랜덤 이미지"),
-            ImageExodia
-        },
-        {
-            new SlashCommandBuilder().WithName("포기해").WithDescription("랜덤 이미지"),
-            ImageGiveUp
-        },
-    };
+            var properties = new SlashCommandProperties(name, description)
+                .WithDefaultGuildPermissions(permissions);
+            if (options.Length > 0)
+                properties.WithOptions(options);
+
+            commands.Add(name, new CommandDefinition(properties, handler));
+        }
+    }
+
+    private static ApplicationCommandOptionProperties Option(
+        ApplicationCommandOptionType type,
+        string name,
+        string description,
+        bool required = false) =>
+        new ApplicationCommandOptionProperties(type, name, description).WithRequired(required);
 }
