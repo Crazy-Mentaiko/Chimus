@@ -9,7 +9,7 @@ public class BotConfig
     public string DiscordToken { get; init; } = string.Empty;
 
     [JsonPropertyName("db.path")]
-    public string DbPath { get; init; } = "data.db";
+    public string DbPath { get; init; } = "data.json";
 
     private const string BotConfigPath = "./config/chimus.json";
 
